@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⚽ Match Prediction Pro</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', sans-serif; background: #07090f; color: #fff; min-height: 100vh; }
+
+    .header { background: linear-gradient(135deg, #0a1020 0%, #0f1a10 50%, #0a1020 100%); border-bottom: 1px solid #1a2235; padding: 20px; text-align: center; }
+    .header h1 { font-size: 28px; background: linear-gradient(90deg, #00e676, #00b0ff, #7c4dff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 6px; }
+    .header p { color: #444; font-size: 13px; }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 20px; }
+
+    .card { background: #0d1120; border: 1px solid #1a2235; border-radius: 16px; padding: 20px; margin-bottom: 14px; }
+    .card h2 { font-size: 14px; color: #00e676; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+    input[type=text], input[type=number], select, textarea {
+      width: 100%; padding: 10px 14px;
+      background: #07090f; border: 1px solid #1a2235;
+      border-radius: 8px; color: #fff; font-size: 13px; outline: none;
+    }
+    input:focus, select:focus, textarea:focus { border-color: #00e676; }
+    select option { background: #0d1120; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .form-group { margin-bottom: 12px; }
+    label { display: block; font-size: 11px; color: #444; margin-bottom: 4px; }
+
+    .toggle-group { display: flex; gap: 6px; }
+    .toggle-btn { flex: 1; padding: 8px 6px; border: 1px solid #1a2235; border-radius: 6px; background: #07090f; color: #555; cursor: pointer; text-align: center; font-size: 11px; transition: all 0.2s; }
+    .toggle-btn.active { border-color: #00e676; color: #00e676; background: rgba(0,230,118,0.08); }
+
+    .form-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; margin-bottom: 16px; }
+    .team-col { }
+    .vs-col { text-align: center; font-size: 20px; color: #333; font-weight: bold; }
+    .team-label { font-size: 12px; color: #444; margin-bottom: 6px; text-align: center; }
+
+    .form-dots { display: flex; gap: 4px; justify-content: center; margin-top: 6px; }
+    .form-dot { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; cursor: pointer; border: 1px solid #1a2235; color: #555; background: #07090f; transition: all 0.2s; }
+    .form-dot.W { background: rgba(0,230,118,0.2); border-color: #00e676; color: #00e676; }
+    .form-dot.D { background: rgba(255,214,0,0.2); border-color: #ffd600; color: #ffd600; }
+    .form-dot.L { background: rgba(255,68,68,0.2); border-color: #ff4444; color: #ff6b6b; }
+
+    .btn-predict { width: 100%; padding: 15px; background: linear-gradient(90deg, #00e676, #00b0ff); border: none; border-radius: 12px; color: #000; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 20px; transition: opacity 0.2s; }
+    .btn-predict:hover { opacity: 0.88; }
+    .btn-predict:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .loading { display: none; text-align: center; padding: 24px; color: #555; }
+    .spinner { width: 44px; height: 44px; border: 3px solid #1a2235; border-top-color: #00e676; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 14px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-msg { display: none; background: rgba(255,60,60,0.08); border: 1px solid #ff3c3c; border-radius: 10px; padding: 12px; color: #ff6b6b; font-size: 13px; margin-bottom: 12px; }
+
+    /* Results */
+    .result-section { display: none; }
+
+    .match-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid #1a2235; margin-bottom: 20px; }
+    .match-team { text-align: center; flex: 1; }
+    .match-team-name { font-size: 20px; font-weight: bold; margin-bottom: 4px; }
+    .match-team-rank { font-size: 11px; color: #555; }
+    .match-vs { font-size: 14px; color: #333; padding: 0 20px; }
+    .match-score-pred { font-size: 36px; font-weight: bold; color: #00e676; }
+
+    .result-banner { text-align: center; padding: 24px; background: #07090f; border-radius: 14px; border: 2px solid #1a2235; margin-bottom: 16px; }
+    .result-emoji { font-size: 64px; margin-bottom: 10px; }
+    .result-label { font-size: 26px; font-weight: bold; margin-bottom: 6px; }
+    .result-conf { font-size: 13px; color: #555; }
+
+    .stats-row { display: flex; gap: 12px; margin-bottom: 14px; }
+    .stat-pill { flex: 1; background: #07090f; border: 1px solid #1a2235; border-radius: 10px; padding: 12px; text-align: center; }
+    .stat-pill-icon { font-size: 22px; margin-bottom: 6px; }
+    .stat-pill-label { font-size: 10px; color: #444; margin-bottom: 3px; }
+    .stat-pill-value { font-size: 14px; font-weight: bold; }
+
+    /* Comparison bars */
+    .compare-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .cmp-val-home { font-size: 13px; font-weight: bold; color: #00e676; width: 40px; text-align: right; }
+    .cmp-val-away { font-size: 13px; font-weight: bold; color: #7c4dff; width: 40px; }
+    .cmp-bar-wrap { flex: 1; position: relative; height: 8px; background: #1a2235; border-radius: 4px; overflow: hidden; }
+    .cmp-bar-home { position: absolute; right: 50%; height: 100%; background: #00e676; border-radius: 4px 0 0 4px; }
+    .cmp-bar-away { position: absolute; left: 50%; height: 100%; background: #7c4dff; border-radius: 0 4px 4px 0; }
+    .cmp-label { font-size: 11px; color: #444; width: 120px; text-align: center; }
+
+    /* Form display */
+    .form-display { display: flex; gap: 5px; }
+    .fd-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; }
+    .fd-W { background: rgba(0,230,118,0.2); color: #00e676; border: 1px solid #00e676; }
+    .fd-D { background: rgba(255,214,0,0.2); color: #ffd600; border: 1px solid #ffd600; }
+    .fd-L { background: rgba(255,68,68,0.2); color: #ff6b6b; border: 1px solid #ff4444; }
+
+    /* Reasoning */
+    .reason-list { list-style: none; }
+    .reason-item { padding: 10px 0; border-bottom: 1px solid #1a2235; font-size: 13px; color: #aaa; display: flex; gap: 10px; align-items: flex-start; line-height: 1.6; }
+    .reason-item:last-child { border-bottom: none; }
+    .reason-icon { font-size: 16px; min-width: 24px; }
+
+    /* Injury list */
+    .injury-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .injury-tag { padding: 3px 10px; border-radius: 12px; font-size: 11px; }
+    .tag-injured { background: rgba(255,68,68,0.1); border: 1px solid #ff4444; color: #ff6b6b; }
+    .tag-suspended { background: rgba(255,214,0,0.1); border: 1px solid #ffd600; color: #ffd600; }
+    .tag-doubt { background: rgba(100,100,100,0.1); border: 1px solid #555; color: #888; }
+
+    /* Prob bars */
+    .prob-row { margin-bottom: 10px; }
+    .prob-label-row { display: flex; justify-content: space-between; font-size: 12px; color: #555; margin-bottom: 4px; }
+    .prob-bar { height: 8px; background: #1a2235; border-radius: 4px; overflow: hidden; }
+    .prob-fill { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
+
+    .section-title { font-size: 11px; color: #333; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+    .divider { border: none; border-top: 1px solid #1a2235; margin: 14px 0; }
+
+    .alert { padding: 12px 14px; border-radius: 10px; margin-bottom: 12px; font-size: 13px; }
+    .alert-green  { background: rgba(0,230,118,0.08); border: 1px solid #00e676; color: #00e676; }
+    .alert-yellow { background: rgba(255,214,0,0.08); border: 1px solid #ffd600; color: #ffd600; }
+    .alert-red    { background: rgba(255,68,68,0.08); border: 1px solid #ff4444; color: #ff6b6b; }
+    .alert-blue   { background: rgba(0,176,255,0.08); border: 1px solid #00b0ff; color: #00b0ff; }
+
+    .disclaimer { text-align: center; color: #222; font-size: 11px; padding: 20px 0 30px; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; margin-left: 6px; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⚽ Match Prediction Pro</h1>
+  <p>Phân tích toàn diện trước trận · Kèm lý do dự đoán · Powered by OpenGradient AI</p>
+</div>
+
+<div class="container">
+
+  <!-- ===== TEAM INFO ===== -->
+  <div class="card">
+    <h2>👥 Thông tin hai đội</h2>
+    <div class="form-row">
+      <div class="team-col">
+        <div class="team-label" style="color:#00e676">🏠 Đội nhà</div>
+        <input type="text" id="homeName" placeholder="Tên đội nhà (vd: Arsenal)" value="">
+      </div>
+      <div class="vs-col">VS</div>
+      <div class="team-col">
+        <div class="team-label" style="color:#7c4dff">✈️ Đội khách</div>
+        <input type="text" id="awayName" placeholder="Tên đội khách (vd: Chelsea)" value="">
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label>🏆 Giải đấu</label>
+        <input type="text" id="leagueName" placeholder="vd: Premier League, La Liga...">
+      </div>
+      <div class="form-group">
+        <label>📅 Ngày thi đấu</label>
+        <input type="text" id="matchDate" placeholder="vd: 05/04/2026 21:00">
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== STANDINGS ===== -->
+  <div class="card">
+    <h2>🏅 Bảng xếp hạng</h2>
+    <div class="grid-2">
+      <div>
+        <div class="section-title" style="color:#00e676">Đội nhà</div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Hạng trên BXH</label>
+            <input type="number" id="homeRank" placeholder="vd: 3" value="3">
+          </div>
+          <div class="form-group">
+            <label>Điểm</label>
+            <input type="number" id="homePts" placeholder="vd: 65">
+          </div>
+          <div class="form-group">
+            <label>TB bàn thắng/trận</label>
+            <input type="number" id="homeGoalsScored" placeholder="vd: 2.1" step="0.1" value="2.1">
+          </div>
+          <div class="form-group">
+            <label>TB bàn thua/trận</label>
+            <input type="number" id="homeGoalsConceded" placeholder="vd: 1.0" step="0.1" value="1.0">
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="section-title" style="color:#7c4dff">Đội khách</div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Hạng trên BXH</label>
+            <input type="number" id="awayRank" placeholder="vd: 7" value="7">
+          </div>
+          <div class="form-group">
+            <label>Điểm</label>
+            <input type="number" id="awayPts" placeholder="vd: 48">
+          </div>
+          <div class="form-group">
+            <label>TB bàn thắng/trận</label>
+            <input type="number" id="awayGoalsScored" placeholder="vd: 1.5" step="0.1" value="1.5">
+          </div>
+          <div class="form-group">
+            <label>TB bàn thua/trận</label>
+            <input type="number" id="awayGoalsConceded" placeholder="vd: 1.3" step="0.1" value="1.3">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FORM 5 TRAN ===== -->
+  <div class="card">
+    <h2>📊 Form 5 trận gần nhất</h2>
+    <div class="grid-2">
+      <div>
+        <div class="section-title" style="color:#00e676;margin-bottom:8px">Đội nhà (trận gần nhất → xa nhất)</div>
+        <div style="display:flex;gap:6px" id="homeFormInput">
+          <select id="hf1" style="flex:1"><option value="W">W</option><option value="D">D</option><option value="L">L</option></select>
+          <select id="hf2" style="flex:1"><option value="W">W</option><option value="D">D</option><option value="L">L</option></select>
+          <select id="hf3" style="flex:1"><option value="W">W</option><option value="D">D</option><option value="L">L</option></select>
+          <select id="hf4" style="flex:1"><option value="D">D</option><option value="W">W</option><option value="L">L</option></select>
+          <select id="hf5" style="flex:1"><option value="W">W</option><option value="D">D</option><option value="L">L</option></select>
+        </div>
+        <div style="font-size:11px;color:#333;margin-top:6px">W=Thắng · D=Hòa · L=Thua</div>
+      </div>
+      <div>
+        <div class="section-title" style="color:#7c4dff;margin-bottom:8px">Đội khách (trận gần nhất → xa nhất)</div>
+        <div style="display:flex;gap:6px" id="awayFormInput">
+          <select id="af1" style="flex:1"><option value="L">L</option><option value="W">W</option><option value="D">D</option></select>
+          <select id="af2" style="flex:1"><option value="W">W</option><option value="D">D</option><option value="L">L</option></select>
+          <select id="af3" style="flex:1"><option value="D">D</option><option value="W">W</option><option value="L">L</option></select>
+          <select id="af4" style="flex:1"><option value="L">L</option><option value="W">W</option><option value="D">D</option></select>
+          <select id="af5" style="flex:1"><option value="W">W</option><option value="D">D</option><option value="L">L</option></select>
+        </div>
+        <div style="font-size:11px;color:#333;margin-top:6px">W=Thắng · D=Hòa · L=Thua</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== H2H ===== -->
+  <div class="card">
+    <h2>⚔️ Thành tích đối đầu (H2H)</h2>
+    <div class="grid-3">
+      <div class="form-group">
+        <label>🏠 Đội nhà thắng</label>
+        <input type="number" id="h2hHomeWins" placeholder="vd: 5" value="5">
+      </div>
+      <div class="form-group">
+        <label>🤝 Hòa</label>
+        <input type="number" id="h2hDraws" placeholder="vd: 3" value="3">
+      </div>
+      <div class="form-group">
+        <label>✈️ Đội khách thắng</label>
+        <input type="number" id="h2hAwayWins" placeholder="vd: 2" value="2">
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== DOI HINH ===== -->
+  <div class="card">
+    <h2>🏥 Đội hình & Chấn thương</h2>
+    <div class="grid-2">
+      <div>
+        <div class="section-title" style="color:#00e676">Đội nhà</div>
+        <div class="form-group">
+          <label>Số cầu thủ chấn thương/treo giò</label>
+          <input type="number" id="homeInjuries" placeholder="vd: 2" value="2">
+        </div>
+        <div class="form-group">
+          <label>Cầu thủ ngôi sao vắng mặt?</label>
+          <div class="toggle-group" id="homeKeyOut">
+            <div class="toggle-btn active" onclick="selectToggle('homeKeyOut',this,0)">❌ Không</div>
+            <div class="toggle-btn" onclick="selectToggle('homeKeyOut',this,1)">✅ Có</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Danh sách (tùy chọn)</label>
+          <input type="text" id="homeInjuryList" placeholder="vd: Saka (chấn thương), Odegaard (treo giò)">
+        </div>
+      </div>
+      <div>
+        <div class="section-title" style="color:#7c4dff">Đội khách</div>
+        <div class="form-group">
+          <label>Số cầu thủ chấn thương/treo giò</label>
+          <input type="number" id="awayInjuries" placeholder="vd: 1" value="1">
+        </div>
+        <div class="form-group">
+          <label>Cầu thủ ngôi sao vắng mặt?</label>
+          <div class="toggle-group" id="awayKeyOut">
+            <div class="toggle-btn active" onclick="selectToggle('awayKeyOut',this,0)">❌ Không</div>
+            <div class="toggle-btn" onclick="selectToggle('awayKeyOut',this,1)">✅ Có</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Danh sách (tùy chọn)</label>
+          <input type="text" id="awayInjuryList" placeholder="vd: Palmer (nghi ngờ), Jackson (OK)">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== THONG TIN BEN LE ===== -->
+  <div class="card">
+    <h2>📰 Thông tin bên lề</h2>
+    <div class="grid-2">
+      <div class="form-group">
+        <label>💪 Động lực đội nhà (0-10)</label>
+        <input type="number" id="homeMotivation" placeholder="vd: 8" value="8" min="0" max="10">
+      </div>
+      <div class="form-group">
+        <label>💪 Động lực đội khách (0-10)</label>
+        <input type="number" id="awayMotivation" placeholder="vd: 6" value="6" min="0" max="10">
+      </div>
+      <div class="form-group">
+        <label>😴 Mệt mỏi đội nhà (0-10)</label>
+        <input type="number" id="homeFatigue" placeholder="vd: 3" value="3" min="0" max="10">
+      </div>
+      <div class="form-group">
+        <label>😴 Mệt mỏi đội khách (0-10)</label>
+        <input type="number" id="awayFatigue" placeholder="vd: 5" value="5" min="0" max="10">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>🔥 Trận derby/đại chiến?</label>
+      <div class="toggle-group" id="isDerby" style="max-width:200px">
+        <div class="toggle-btn active" onclick="selectToggle('isDerby',this,0)">❌ Không</div>
+        <div class="toggle-btn" onclick="selectToggle('isDerby',this,1)">🔥 Có</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>📝 Tin tức bên lề (tùy chọn)</label>
+      <textarea id="sidelineNews" rows="3" placeholder="vd: HLV Arsenal vừa gia hạn hợp đồng, Chelsea đang có mâu thuẫn nội bộ..." style="resize:none"></textarea>
+    </div>
+  </div>
+
+  <div class="error-msg" id="errorMsg"></div>
+
+  <button class="btn-predict" onclick="runPrediction()">🔮 Dự đoán kết quả trận đấu</button>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p>Đang phân tích với OpenGradient AI...</p>
+  </div>
+
+  <!-- ===== RESULTS ===== -->
+  <div class="result-section" id="resultSection">
+
+    <!-- Match Header -->
+    <div class="card">
+      <div class="match-header">
+        <div class="match-team">
+          <div class="match-team-name" id="rHomeTeam" style="color:#00e676">-</div>
+          <div class="match-team-rank" id="rHomeRank">-</div>
+        </div>
+        <div style="text-align:center">
+          <div class="match-score-pred" id="rScorePred">- : -</div>
+          <div style="font-size:11px;color:#555;margin-top:4px" id="rLeague">-</div>
+          <div style="font-size:11px;color:#555" id="rDate">-</div>
+        </div>
+        <div class="match-team">
+          <div class="match-team-name" id="rAwayTeam" style="color:#7c4dff">-</div>
+          <div class="match-team-rank" id="rAwayRank">-</div>
+        </div>
+      </div>
+
+      <!-- Result Banner -->
+      <div class="result-banner" id="resultBanner">
+        <div class="result-emoji" id="resultEmoji">-</div>
+        <div class="result-label" id="resultLabel">-</div>
+        <div class="result-conf" id="resultConf">-</div>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="stats-row">
+        <div class="stat-pill">
+          <div class="stat-pill-icon">⚽</div>
+          <div class="stat-pill-label">Cả 2 cùng ghi bàn</div>
+          <div class="stat-pill-value" id="sBothScore">-</div>
+        </div>
+        <div class="stat-pill">
+          <div class="stat-pill-icon">📊</div>
+          <div class="stat-pill-label">Độ tin cậy</div>
+          <div class="stat-pill-value" id="sConfidence">-</div>
+        </div>
+        <div class="stat-pill">
+          <div class="stat-pill-icon">🎯</div>
+          <div class="stat-pill-label">Tỷ số dự đoán</div>
+          <div class="stat-pill-value" id="sScoreLine">-</div>
+        </div>
+        <div class="stat-pill">
+          <div class="stat-pill-icon">🏠</div>
+          <div class="stat-pill-label">Lợi thế sân nhà</div>
+          <div class="stat-pill-value" style="color:#00e676">Có</div>
+        </div>
+      </div>
+
+      <!-- Win Probability -->
+      <div class="section-title">Xác suất kết quả</div>
+      <div id="probBars"></div>
+    </div>
+
+    <!-- Alert Box -->
+    <div id="alertBox"></div>
+
+    <!-- Comparison -->
+    <div class="card">
+      <h2>📊 So sánh hai đội</h2>
+      <div id="comparisonBars"></div>
+    </div>
+
+    <!-- Form Display -->
+    <div class="card">
+      <h2>📈 Form 5 trận gần nhất</h2>
+      <div class="grid-2">
+        <div>
+          <div class="section-title" style="color:#00e676;margin-bottom:8px" id="formHomeName">Đội nhà</div>
+          <div class="form-display" id="formHomeDisplay"></div>
+          <div style="font-size:12px;color:#555;margin-top:8px" id="formHomeSummary"></div>
+        </div>
+        <div>
+          <div class="section-title" style="color:#7c4dff;margin-bottom:8px" id="formAwayName">Đội khách</div>
+          <div class="form-display" id="formAwayDisplay"></div>
+          <div style="font-size:12px;color:#555;margin-top:8px" id="formAwaySummary"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Injury Report -->
+    <div class="card">
+      <h2>🏥 Báo cáo đội hình</h2>
+      <div class="grid-2">
+        <div>
+          <div class="section-title" style="color:#00e676" id="injHomeTitle">Đội nhà</div>
+          <div id="injHomeList"></div>
+        </div>
+        <div>
+          <div class="section-title" style="color:#7c4dff" id="injAwayTitle">Đội khách</div>
+          <div id="injAwayList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- H2H -->
+    <div class="card">
+      <h2>⚔️ Lịch sử đối đầu</h2>
+      <div style="display:flex;gap:10px;margin-bottom:16px">
+        <div class="stat-pill" style="border-color:#00e676">
+          <div class="stat-pill-icon" id="h2hHomeNum" style="font-size:28px;color:#00e676">-</div>
+          <div class="stat-pill-label" id="h2hHomeLabel">Đội nhà thắng</div>
+        </div>
+        <div class="stat-pill">
+          <div class="stat-pill-icon" id="h2hDrawNum" style="font-size:28px;color:#ffd600">-</div>
+          <div class="stat-pill-label">Hòa</div>
+        </div>
+        <div class="stat-pill" style="border-color:#7c4dff">
+          <div class="stat-pill-icon" id="h2hAwayNum" style="font-size:28px;color:#7c4dff">-</div>
+          <div class="stat-pill-label" id="h2hAwayLabel">Đội khách thắng</div>
+        </div>
+      </div>
+      <div id="h2hAnalysis" style="font-size:13px;color:#666;line-height:1.7;padding:12px;background:#07090f;border-radius:10px;border:1px solid #1a2235;"></div>
+    </div>
+
+    <!-- Reasoning -->
+    <div class="card">
+      <h2>🧠 Lý do dự đoán</h2>
+      <ul class="reason-list" id="reasonList"></ul>
+    </div>
+
+    <!-- Sideline News -->
+    <div class="card" id="sidelineCard" style="display:none">
+      <h2>📰 Thông tin bên lề</h2>
+      <div id="sidelineDisplay" style="font-size:13px;color:#aaa;line-height:1.7;padding:12px;background:#07090f;border-radius:10px;border:1px solid #1a2235;"></div>
+    </div>
+
+  </div>
+
+  <p class="disclaimer">⚽ Match Prediction Pro · OpenGradient AI · Dự đoán mang tính tham khảo thống kê · Không phải lời khuyên cá cược</p>
+</div>
+
+<script>
+  const MODEL_CID = "f6f-bKVG0IAbi0xomxkuh4Guiye6pSnCfqm-1IVy-PA";
+
+  const toggleVals = { homeKeyOut: 0, awayKeyOut: 0, isDerby: 0 };
+
+  function selectToggle(group, el, val) {
+    toggleVals[group] = val;
+    document.querySelectorAll(`#${group} .toggle-btn`).forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  function calcFormPts(ids) {
+    let pts = 0;
+    ids.forEach(id => {
+      const v = document.getElementById(id).value;
+      if (v === 'W') pts += 3;
+      else if (v === 'D') pts += 1;
+    });
+    return pts;
+  }
+
+  async function runPrediction() {
+    const homeName  = document.getElementById('homeName').value.trim() || 'Đội nhà';
+    const awayName  = document.getElementById('awayName').value.trim() || 'Đội khách';
+    const homeRank  = parseFloat(document.getElementById('homeRank').value) || 5;
+    const awayRank  = parseFloat(document.getElementById('awayRank').value) || 10;
+    const homeGoalsScored    = parseFloat(document.getElementById('homeGoalsScored').value) || 1.5;
+    const awayGoalsScored    = parseFloat(document.getElementById('awayGoalsScored').value) || 1.2;
+    const homeGoalsConceded  = parseFloat(document.getElementById('homeGoalsConceded').value) || 1.2;
+    const awayGoalsConceded  = parseFloat(document.getElementById('awayGoalsConceded').value) || 1.4;
+    const h2hHW     = parseFloat(document.getElementById('h2hHomeWins').value) || 3;
+    const h2hD      = parseFloat(document.getElementById('h2hDraws').value) || 2;
+    const h2hAW     = parseFloat(document.getElementById('h2hAwayWins').value) || 2;
+    const homeInj   = parseFloat(document.getElementById('homeInjuries').value) || 0;
+    const awayInj   = parseFloat(document.getElementById('awayInjuries').value) || 0;
+    const homeMot   = parseFloat(document.getElementById('homeMotivation').value) || 7;
+    const awayMot   = parseFloat(document.getElementById('awayMotivation').value) || 7;
+    const homeFat   = parseFloat(document.getElementById('homeFatigue').value) || 3;
+    const awayFat   = parseFloat(document.getElementById('awayFatigue').value) || 3;
+
+    const homeFormPts = calcFormPts(['hf1','hf2','hf3','hf4','hf5']);
+    const awayFormPts = calcFormPts(['af1','af2','af3','af4','af5']);
+
+    document.getElementById('errorMsg').style.display = 'none';
+    document.getElementById('resultSection').style.display = 'none';
+    document.getElementById('loading').style.display = 'block';
+    document.querySelector('.btn-predict').disabled = true;
+
+    const input = [[
+      homeRank, awayRank,
+      homeFormPts, awayFormPts,
+      homeGoalsScored, awayGoalsScored,
+      homeGoalsConceded, awayGoalsConceded,
+      h2hHW, h2hD, h2hAW,
+      homeInj, awayInj,
+      toggleVals.homeKeyOut, toggleVals.awayKeyOut,
+      homeMot, awayMot,
+      homeFat, awayFat,
+      toggleVals.isDerby
+    ]];
+
+    let resultIdx = 0, confIdx = 1, scoreIdx = 1, bothIdx = 0;
+
+    try {
+      const res = await fetch("https://api.opengradient.ai/api/v1/model/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model_cid: MODEL_CID, inputs: { float_input: input } })
+      });
+      const data = await res.json();
+      const labels = data?.output_label ?? [];
+      resultIdx = parseInt(labels[0] ?? calcResult(homeRank, awayRank, homeFormPts, awayFormPts));
+      confIdx   = parseInt(labels[1] ?? 1);
+      scoreIdx  = parseInt(labels[2] ?? 1);
+      bothIdx   = parseInt(labels[3] ?? 0);
+    } catch {
+      resultIdx = calcResult(homeRank, awayRank, homeFormPts, awayFormPts);
+      confIdx   = calcConf(homeRank, awayRank, homeFormPts, awayFormPts);
+      scoreIdx  = calcScore(resultIdx, homeGoalsScored, awayGoalsScored);
+      bothIdx   = (homeGoalsScored > 1.2 && awayGoalsScored > 1.2) ? 1 : 0;
+    } finally {
+      document.getElementById('loading').style.display = 'none';
+      document.querySelector('.btn-predict').disabled = false;
+    }
+
+    showResult({
+      resultIdx, confIdx, scoreIdx, bothIdx,
+      homeName, awayName, homeRank, awayRank,
+      homeFormPts, awayFormPts,
+      homeGoalsScored, awayGoalsScored,
+      homeGoalsConceded, awayGoalsConceded,
+      h2hHW, h2hD, h2hAW,
+      homeInj, awayInj,
+      homeMot, awayMot, homeFat, awayFat,
+    });
+  }
+
+  function calcResult(hr, ar, hf, af) {
+    let h = 1, a = 0;
+    if (ar - hr > 5) h += 2; else if (ar > hr) h += 1;
+    if (hr - ar > 5) a += 2; else if (hr > ar) a += 1;
+    if (hf - af > 4) h += 2; else if (hf > af) h += 1;
+    if (af - hf > 4) a += 2; else if (af > hf) a += 1;
+    return h - a >= 3 ? 0 : h - a <= -2 ? 2 : 1;
+  }
+  function calcConf(hr, ar, hf, af) {
+    const rd = Math.abs(hr - ar), fd = Math.abs(hf - af);
+    return (rd > 5 || fd > 5) ? 2 : (rd > 2 || fd > 2) ? 1 : 0;
+  }
+  function calcScore(r, hg, ag) {
+    if (r === 0) return hg > 2 ? 2 : hg > 1.5 ? 4 : 1;
+    if (r === 1) return 3;
+    return 5;
+  }
+
+  function showResult(d) {
+    const results = [
+      { emoji:'🏠', label:`${d.homeName} thắng`, color:'#00e676', probs:[65, 22, 13] },
+      { emoji:'🤝', label:'Hòa',                 color:'#ffd600', probs:[30, 40, 30] },
+      { emoji:'✈️', label:`${d.awayName} thắng`, color:'#7c4dff', probs:[13, 22, 65] },
+    ];
+    const scores = ['0 - 0', '1 - 0', '2 - 0', '1 - 1', '2 - 1', 'Khác'];
+    const confs  = ['🔵 Thấp', '🟡 Trung bình', '🟢 Cao'];
+    const r = results[d.resultIdx] || results[0];
+    const scoreDisplay = d.resultIdx === 2
+      ? scores[d.scoreIdx].split(' - ').reverse().join(' - ')
+      : scores[d.scoreIdx];
+
+    // Header
+    document.getElementById('rHomeTeam').textContent = d.homeName;
+    document.getElementById('rAwayTeam').textContent = d.awayName;
+    document.getElementById('rHomeRank').textContent = `Hạng #${d.homeRank} · ${document.getElementById('homePts').value || '-'} điểm`;
+    document.getElementById('rAwayRank').textContent = `Hạng #${d.awayRank} · ${document.getElementById('awayPts').value || '-'} điểm`;
+    document.getElementById('rScorePred').textContent = scoreDisplay;
+    document.getElementById('rScorePred').style.color = r.color;
+    document.getElementById('rLeague').textContent = document.getElementById('leagueName').value || '';
+    document.getElementById('rDate').textContent = document.getElementById('matchDate').value || '';
+
+    // Banner
+    document.getElementById('resultEmoji').textContent = r.emoji;
+    document.getElementById('resultLabel').textContent = r.label;
+    document.getElementById('resultLabel').style.color = r.color;
+    document.getElementById('resultBanner').style.borderColor = r.color;
+    document.getElementById('resultConf').textContent = `Độ tin cậy: ${confs[d.confIdx]}`;
+
+    // Quick stats
+    document.getElementById('sBothScore').textContent = d.bothIdx === 1 ? '✅ Có' : '❌ Không';
+    document.getElementById('sConfidence').textContent = ['Thấp','Trung bình','Cao'][d.confIdx];
+    document.getElementById('sScoreLine').textContent = scoreDisplay;
+
+    // Prob bars
+    const colors = ['#00e676', '#ffd600', '#7c4dff'];
+    const probLabels = [`${d.homeName} thắng`, 'Hòa', `${d.awayName} thắng`];
+    document.getElementById('probBars').innerHTML = r.probs.map((p, i) => `
+      <div class="prob-row">
+        <div class="prob-label-row"><span>${probLabels[i]}</span><span>${p}%</span></div>
+        <div class="prob-bar"><div class="prob-fill" style="width:${p}%;background:${colors[i]}"></div></div>
+      </div>`).join('');
+
+    // Alert
+    let alertHtml = '';
+    if (d.isDerby === 1) alertHtml += `<div class="alert alert-red">🔥 Trận derby — Kết quả khó đoán, bất ngờ có thể xảy ra!</div>`;
+    if (d.homeKeyOut === 1) alertHtml += `<div class="alert alert-yellow">⚠️ ${d.homeName} vắng cầu thủ ngôi sao — ảnh hưởng đáng kể!</div>`;
+    if (d.awayKeyOut === 1) alertHtml += `<div class="alert alert-yellow">⚠️ ${d.awayName} vắng cầu thủ ngôi sao — ảnh hưởng đáng kể!</div>`;
+    if (d.confIdx === 2) alertHtml += `<div class="alert alert-green">✅ Độ tin cậy cao — Các chỉ số đồng thuận mạnh!</div>`;
+    if (d.confIdx === 0) alertHtml += `<div class="alert alert-blue">ℹ️ Trận đấu khó đoán — Hai đội có sức mạnh tương đương!</div>`;
+    document.getElementById('alertBox').innerHTML = alertHtml;
+
+    // Comparison
+    const comparisons = [
+      { label:'BXH (thấp hơn = tốt)', hVal:`#${d.homeRank}`, aVal:`#${d.awayRank}`, hBar:Math.max(5, (20-d.homeRank)*5), aBar:Math.max(5, (20-d.awayRank)*5) },
+      { label:'Form (điểm)', hVal:d.homeFormPts, aVal:d.awayFormPts, hBar:d.homeFormPts*100/15, aBar:d.awayFormPts*100/15 },
+      { label:'Ghi bàn TB', hVal:d.homeGoalsScored.toFixed(1), aVal:d.awayGoalsScored.toFixed(1), hBar:d.homeGoalsScored*20, aBar:d.awayGoalsScored*20 },
+      { label:'Phòng thủ (thấp=tốt)', hVal:d.homeGoalsConceded.toFixed(1), aVal:d.awayGoalsConceded.toFixed(1), hBar:(3-d.homeGoalsConceded)*25, aBar:(3-d.awayGoalsConceded)*25 },
+      { label:'Động lực', hVal:d.homeMot, aVal:d.awayMot, hBar:d.homeMot*10, aBar:d.awayMot*10 },
+    ];
+    document.getElementById('comparisonBars').innerHTML = comparisons.map(c => `
+      <div class="compare-row">
+        <div class="cmp-val-home">${c.hVal}</div>
+        <div style="flex:1">
+          <div class="cmp-bar-wrap">
+            <div class="cmp-bar-home" style="width:${Math.min(c.hBar,50)}%"></div>
+          </div>
+        </div>
+        <div class="cmp-label">${c.label}</div>
+        <div style="flex:1">
+          <div class="cmp-bar-wrap">
+            <div class="cmp-bar-away" style="width:${Math.min(c.aBar,50)}%"></div>
+          </div>
+        </div>
+        <div class="cmp-val-away">${c.aVal}</div>
+      </div>`).join('');
+
+    // Form display
+    const formIds = [['hf1','hf2','hf3','hf4','hf5'], ['af1','af2','af3','af4','af5']];
+    const formElIds = ['formHomeDisplay','formAwayDisplay'];
+    const formSumIds = ['formHomeSummary','formAwaySummary'];
+    const formPts = [d.homeFormPts, d.awayFormPts];
+    [0,1].forEach(t => {
+      const vals = formIds[t].map(id => document.getElementById(id).value);
+      document.getElementById(formElIds[t]).innerHTML = vals.map(v =>
+        `<div class="fd-dot fd-${v}">${v}</div>`).join('');
+      const w = vals.filter(v=>v==='W').length;
+      const dv = vals.filter(v=>v==='D').length;
+      const l = vals.filter(v=>v==='L').length;
+      document.getElementById(formSumIds[t]).textContent = `${w}W ${dv}D ${l}L · ${formPts[t]} điểm`;
+    });
+    document.getElementById('formHomeName').textContent = d.homeName;
+    document.getElementById('formAwayName').textContent = d.awayName;
+
+    // Injury report
+    const renderInjury = (listStr, injuries, keyOut, elId) => {
+      let html = '';
+      if (injuries === 0 && keyOut === 0) {
+        html = '<div style="font-size:12px;color:#333">✅ Không có cầu thủ vắng mặt</div>';
+      } else {
+        html += `<div style="font-size:12px;color:#555;margin-bottom:6px">${injuries} cầu thủ vắng mặt</div>`;
+        if (keyOut === 1) html += `<span class="injury-tag tag-injured">⭐ Ngôi sao vắng mặt</span> `;
+        if (listStr) {
+          listStr.split(',').forEach(p => {
+            const name = p.trim();
+            if (!name) return;
+            const type = name.toLowerCase().includes('treo') || name.toLowerCase().includes('suspend') ? 'tag-suspended' :
+                         name.toLowerCase().includes('nghi') || name.toLowerCase().includes('doubt') ? 'tag-doubt' : 'tag-injured';
+            html += `<span class="injury-tag ${type}">${name}</span> `;
+          });
+        }
+      }
+      document.getElementById(elId).innerHTML = `<div class="injury-tags">${html}</div>`;
+    };
+    document.getElementById('injHomeTitle').textContent = d.homeName;
+    document.getElementById('injAwayTitle').textContent = d.awayName;
+    renderInjury(document.getElementById('homeInjuryList').value, d.homeInj, toggleVals.homeKeyOut, 'injHomeList');
+    renderInjury(document.getElementById('awayInjuryList').value, d.awayInj, toggleVals.awayKeyOut, 'injAwayList');
+
+    // H2H
+    document.getElementById('h2hHomeNum').textContent = d.h2hHW;
+    document.getElementById('h2hDrawNum').textContent = d.h2hD;
+    document.getElementById('h2hAwayNum').textContent = d.h2hAW;
+    document.getElementById('h2hHomeLabel').textContent = `${d.homeName} thắng`;
+    document.getElementById('h2hAwayLabel').textContent = `${d.awayName} thắng`;
+    const total = d.h2hHW + d.h2hD + d.h2hAW;
+    const h2hDominant = d.h2hHW > d.h2hAW + 2 ? d.homeName : d.h2hAW > d.h2hHW + 2 ? d.awayName : null;
+    document.getElementById('h2hAnalysis').innerHTML = `
+      Trong ${total} trận đối đầu gần nhất: <strong>${d.homeName}</strong> thắng <strong>${d.h2hHW}</strong> trận,
+      hòa <strong>${d.h2hD}</strong>, <strong>${d.awayName}</strong> thắng <strong>${d.h2hAW}</strong> trận.<br><br>
+      ${h2hDominant
+        ? `<strong>${h2hDominant}</strong> có lợi thế lịch sử rõ ràng trong các trận đối đầu này.`
+        : 'Hai đội có lịch sử đối đầu khá cân bằng, khó đoán dựa trên H2H đơn thuần.'}`;
+
+    // Reasoning
+    const reasons = [];
+    if (d.homeRank < d.awayRank - 3) reasons.push({ icon:'🏅', text:`<strong>${d.homeName}</strong> xếp hạng ${d.homeRank} trên BXH, cao hơn đáng kể so với ${d.awayName} (hạng ${d.awayRank}) → Lợi thế về sức mạnh tổng thể.` });
+    else if (d.awayRank < d.homeRank - 3) reasons.push({ icon:'🏅', text:`<strong>${d.awayName}</strong> xếp hạng ${d.awayRank} trên BXH, cao hơn đáng kể so với ${d.homeName} (hạng ${d.homeRank}) → Đội khách mạnh hơn về thứ hạng.` });
+    else reasons.push({ icon:'🏅', text:`Hai đội có thứ hạng BXH khá gần nhau (${d.homeName} #${d.homeRank} vs ${d.awayName} #${d.awayRank}) → Chênh lệch sức mạnh không lớn.` });
+
+    if (d.homeFormPts > d.awayFormPts + 3) reasons.push({ icon:'📈', text:`<strong>${d.homeName}</strong> đang trong phong độ tốt (${d.homeFormPts}/15 điểm) so với ${d.awayName} (${d.awayFormPts}/15) → Lợi thế về momentum.` });
+    else if (d.awayFormPts > d.homeFormPts + 3) reasons.push({ icon:'📈', text:`<strong>${d.awayName}</strong> đang trong phong độ tốt hơn (${d.awayFormPts}/15 điểm) so với ${d.homeName} (${d.homeFormPts}/15) → Đội khách có momentum tốt hơn.` });
+    else reasons.push({ icon:'📈', text:`Phong độ hai đội tương đương nhau (${d.homeName}: ${d.homeFormPts}/15 · ${d.awayName}: ${d.awayFormPts}/15) → Khó phân biệt qua chỉ số form.` });
+
+    if (d.h2hHW > d.h2hAW + 2) reasons.push({ icon:'⚔️', text:`<strong>${d.homeName}</strong> có lợi thế H2H rõ ràng (${d.h2hHW}W-${d.h2hD}D-${d.h2hAW}L) → Tâm lý đối đầu nghiêng về đội nhà.` });
+    else if (d.h2hAW > d.h2hHW + 2) reasons.push({ icon:'⚔️', text:`<strong>${d.awayName}</strong> có lợi thế H2H (${d.h2hAW} thắng vs ${d.h2hHW}) → Đội khách thường làm tốt trong các trận đối đầu này.` });
+    else reasons.push({ icon:'⚔️', text:`Lịch sử H2H khá cân bằng → Không thể dựa quá nhiều vào yếu tố tâm lý đối đầu.` });
+
+    if (d.homeGoalsScored > 2.0) reasons.push({ icon:'⚽', text:`<strong>${d.homeName}</strong> tấn công hiệu quả với trung bình ${d.homeGoalsScored} bàn/trận → Áp lực ghi bàn cao.` });
+    if (d.homeGoalsConceded < 1.0) reasons.push({ icon:'🛡️', text:`Hàng thủ <strong>${d.homeName}</strong> vững chắc (chỉ ${d.homeGoalsConceded} bàn thua/trận) → Khó bị chọc thủng.` });
+    if (toggleVals.homeKeyOut === 1) reasons.push({ icon:'🏥', text:`<strong>${d.homeName}</strong> vắng cầu thủ ngôi sao → Ảnh hưởng đáng kể đến sức mạnh tấn công/sáng tạo.` });
+    if (toggleVals.awayKeyOut === 1) reasons.push({ icon:'🏥', text:`<strong>${d.awayName}</strong> vắng cầu thủ ngôi sao → Sức mạnh tổng thể bị suy giảm.` });
+    if (d.homeInj > 3) reasons.push({ icon:'⚠️', text:`<strong>${d.homeName}</strong> có ${d.homeInj} cầu thủ vắng mặt → Ảnh hưởng đến chiều sâu đội hình.` });
+    if (d.homeMot > d.awayMot + 2) reasons.push({ icon:'💪', text:`<strong>${d.homeName}</strong> có động lực cao hơn (${d.homeMot}/10 vs ${d.awayMot}/10) → Yếu tố tâm lý có lợi.` });
+    if (d.awayFat > d.homeFat + 3) reasons.push({ icon:'😴', text:`<strong>${d.awayName}</strong> có dấu hiệu mệt mỏi (${d.awayFat}/10) → Thể lực có thể ảnh hưởng đến hiệp 2.` });
+    reasons.push({ icon:'🏠', text:`Lợi thế sân nhà luôn là yếu tố quan trọng → <strong>${d.homeName}</strong> được hưởng sự cổ vũ của khán giả nhà.` });
+
+    document.getElementById('reasonList').innerHTML = reasons.map(r =>
+      `<li class="reason-item"><span class="reason-icon">${r.icon}</span><span>${r.text}</span></li>`
+    ).join('');
+
+    // Sideline news
+    const news = document.getElementById('sidelineNews').value.trim();
+    if (news) {
+      document.getElementById('sidelineDisplay').textContent = news;
+      document.getElementById('sidelineCard').style.display = 'block';
+    } else {
+      document.getElementById('sidelineCard').style.display = 'none';
+    }
+
+    document.getElementById('resultSection').style.display = 'block';
+    document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
+  }
+</script>
+</body>
+</html>
